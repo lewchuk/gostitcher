@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
-func  main() {
-	fmt.Printf("hello world\n")
+func main() {
+	inputPath := os.Args[1]
+	fmt.Printf("Processing image at: %s", inputPath)
 }
