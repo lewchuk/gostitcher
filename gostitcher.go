@@ -29,66 +29,78 @@ type ConfigFile struct {
 	Files []ImageConfig `json:"files"`
 }
 
-func loadImage(path string) image.Image {
-	f, err3 := os.Open(path)
+func loadImage(imagePath string) (image.Image, error) {
+	f, err := os.Open(imagePath)
 	defer f.Close()
 
-	if err3 != nil {
-		fmt.Println("Error reading iamge:", err3)
-		os.Exit(1)
+	if err != nil {
+		return nil, err
 	}
 
-	img, err4 := jpeg.Decode(f)
+	img, err := jpeg.Decode(f)
 
-	if err4 != nil {
-		fmt.Println("Error decoding image:", err4)
-		os.Exit(1)
+	if err != nil {
+		return nil, fmt.Errorf("decoding image %s: %s", imagePath, err)
 	}
 
 	if img.ColorModel() != color.GrayModel {
-		fmt.Println("Image not grayscale, can't convert")
-		os.Exit(1)
+		return nil, fmt.Errorf("image %s: not grayscale, can't process", imagePath)
 	}
 
-	return img
+	return img, nil
 }
 
-func combineImages1(config ConfigFile, root string) {
+func combineImages1(config ConfigFile, root string) error {
 	// var imageBounds image.Rectangle
 	imageMap := make(map[string]image.Image)
 
 	for _, imageConfig := range config.Files {
 		fmt.Println("Reading: ", imageConfig.Filename)
 		fullPath := path.Join(root, imageConfig.Filename)
-		img := loadImage(fullPath)
+		img, err := loadImage(fullPath)
+		if err != nil {
+			return err
+		}
 
 		// imageBounds = img.Bounds()
 		imageMap[imageConfig.Filter] = img
 	}
 
 	if imageMap["BL1"] == nil || imageMap["GRN"] == nil || imageMap["RED"] == nil {
-		fmt.Println("Image map missing a necessary filter:", imageMap)
+		var filters []string
+		for k := range imageMap {
+		    filters = append(filters, k)
+		}
+		return fmt.Errorf("images in %s: missing one or more RGB filters: %s", root, filters)
 	}
+
+	return nil
 }
 
-func main() {
-	inputPath := os.Args[1]
-	fmt.Printf("Processing image at: %s\n", inputPath)
+func processImages(inputPath string) error {
+	fmt.Printf("Processing: %s\n", inputPath)
 
-	configS, err := ioutil.ReadFile(path.Join(inputPath, "config.json"))
+	configPath := path.Join(inputPath, "config.json")
+	configS, err := ioutil.ReadFile(configPath)
 
 	if err != nil {
-		fmt.Println("Error reading config:", err)
-		os.Exit(-1)
+		return err
 	}
 
 	config := ConfigFile{}
-	err2 := json.Unmarshal(configS, &config)
 
-	if err2 != nil {
-		fmt.Println("Error parsing config:", err)
-		os.Exit(-1)
+	if err := json.Unmarshal(configS, &config); err != nil {
+		return fmt.Errorf("parsing config %s: %s", configPath, err)
 	}
 
-	combineImages1(config, inputPath)
+	return combineImages1(config, inputPath)
+}
+
+func main() {
+	err := processImages(os.Args[1])
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
