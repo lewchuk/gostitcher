@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/jpeg"
 	"io/ioutil"
 	"os"
@@ -17,6 +18,13 @@ var FilterMap = map[string]int{
 	"BL1": 463,
 	"GRN": 568,
 	"RED": 647,
+}
+
+// A map from filter colors to a naive RGB color scheme for the V1 algorithm.
+var FilterMap_V1 = map[string]color.Color{
+	"BL1": color.RGBA{0, 0, 255, 255},
+	"GRN": color.RGBA{0, 255, 0, 255},
+	"RED": color.RGBA{255, 0, 0, 255},
 }
 
 // The type for marshalling a config.json file from a folder with images.
@@ -50,8 +58,28 @@ func loadImage(imagePath string) (image.Image, error) {
 	return img, nil
 }
 
+func convertToAlpha(grayImage image.Image) image.Image {
+	bounds := grayImage.Bounds()
+	mask := image.NewRGBA(bounds)
+	for x := 0; x < bounds.Dx(); x++ {
+		for y := 0; y < bounds.Dy(); y++ {
+			grayPixel := grayImage.At(x, y).(color.Gray)
+			rgbaPixel := color.RGBA{0, 0, 0, grayPixel.Y}
+			mask.Set(x, y, rgbaPixel)
+		}
+	}
+
+	return mask
+}
+
+func layerColor(dst draw.Image, grayImage image.Image, layerColor color.Color) {
+	src := &image.Uniform{layerColor}
+	mask := convertToAlpha(grayImage)
+	draw.DrawMask(dst, grayImage.Bounds(), src, image.ZP, mask, image.ZP, draw.Over)
+}
+
 func combineImages1(config ConfigFile, root string) error {
-	// var imageBounds image.Rectangle
+	var imageBounds image.Rectangle
 	imageMap := make(map[string]image.Image)
 
 	for _, imageConfig := range config.Files {
@@ -62,19 +90,39 @@ func combineImages1(config ConfigFile, root string) error {
 			return err
 		}
 
-		// imageBounds = img.Bounds()
+		newBounds := img.Bounds()
+		if imageBounds != image.ZR && imageBounds != newBounds {
+			return fmt.Errorf("image %s: has different bounds (%s) than other images (%s)",
+				fullPath, newBounds, imageBounds)
+		}
+		imageBounds = newBounds
 		imageMap[imageConfig.Filter] = img
 	}
 
 	if imageMap["BL1"] == nil || imageMap["GRN"] == nil || imageMap["RED"] == nil {
 		var filters []string
 		for k := range imageMap {
-		    filters = append(filters, k)
+			filters = append(filters, k)
 		}
 		return fmt.Errorf("images in %s: missing one or more RGB filters: %s", root, filters)
 	}
 
-	return nil
+	fmt.Println("Loaded images of size:", imageBounds)
+
+	composedImage := image.NewRGBA(imageBounds)
+
+	layerColor(composedImage, imageMap["BL1"], FilterMap_V1["BL1"])
+	layerColor(composedImage, imageMap["GRN"], FilterMap_V1["GRN"])
+	layerColor(composedImage, imageMap["RED"], FilterMap_V1["RED"])
+
+	outPath := path.Join(root, "output_v1.jpg")
+	fmt.Println("Writing image to:", outPath)
+	f, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+
+	return jpeg.Encode(f, composedImage, nil)
 }
 
 func processImages(inputPath string) error {
