@@ -1,0 +1,17 @@
+{
+	"files": [
+		{
+			"filename": "N00084957_bl1.jpg",
+			"filter": "BL1"
+		},
+		{
+			"filename": "N00084956_grn.jpg",
+			"filter": "GRN"
+		},
+		{
+			"filename": "N00084955_red.jpg",
+			"filter": "RED"
+		}
+	],
+	"credit": "NASA / JPL / SSI / Emily Lakdawalla\nhttp://www.planetary.org/explore/space-topics/space-imaging/tutorial_rgb_ps.html"
+}
