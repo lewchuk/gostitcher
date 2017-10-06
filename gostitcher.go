@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gostitcher/algv1masking"
+	"gostitcher/algv2blending"
 	"gostitcher/common"
 	"io/ioutil"
 	"os"
@@ -38,6 +39,10 @@ func processImages(inputPath string) error {
 	if err != nil { return err }
 
 	if err = algv1masking.CombineImages(imageMap, inputPath); err != nil {
+		return err
+	}
+
+	if err = algv2blending.CombineImages(imageMap, inputPath); err != nil {
 		return err
 	}
 
