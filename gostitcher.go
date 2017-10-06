@@ -115,14 +115,32 @@ func combineImages1(config ConfigFile, root string) error {
 	layerColor(composedImage, imageMap["GRN"], FilterMap_V1["GRN"])
 	layerColor(composedImage, imageMap["RED"], FilterMap_V1["RED"])
 
-	outPath := path.Join(root, "output_v1.jpg")
+	outPath := path.Join(root, "output_v1_alpha.jpg")
 	fmt.Println("Writing image to:", outPath)
 	f, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
 
-	return jpeg.Encode(f, composedImage, nil)
+	err = jpeg.Encode(f, composedImage, nil)
+	if err != nil {
+		return err
+	}
+
+	composedImage2 := image.NewRGBA(imageBounds)
+
+	layerColor(composedImage2, imageMap["RED"], FilterMap_V1["RED"])
+	layerColor(composedImage2, imageMap["GRN"], FilterMap_V1["GRN"])
+	layerColor(composedImage2, imageMap["BL1"], FilterMap_V1["BL1"])
+
+	outPath2 := path.Join(root, "output_v1_beta.jpg")
+	fmt.Println("Writing image to:", outPath2)
+	f2, err := os.Create(outPath2)
+	if err != nil {
+		return err
+	}
+
+	return jpeg.Encode(f2, composedImage2, nil)
 }
 
 func processImages(inputPath string) error {
