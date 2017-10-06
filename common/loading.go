@@ -36,7 +36,7 @@ func loadImage(imagePath string) (*image.Gray, error) {
 // The set of images will be validated as grayscale images and to ensure they
 // represent a complete RGB set of images.
 // It returns a map of filters to images and any errors encountered.
-func LoadImages(config ConfigFile, root string) (map[string]image.Gray, error) {
+func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 	var imageBounds image.Rectangle
 	imageMap := make(map[string]image.Gray)
 

@@ -34,7 +34,14 @@ func processImages(inputPath string) error {
 		return fmt.Errorf("parsing config %s: %s", configPath, err)
 	}
 
-	return algv1masking.CombineImages(config, inputPath)
+	imageMap, err := common.LoadImages(config, inputPath)
+	if err != nil { return err }
+
+	if err = algv1masking.CombineImages(imageMap, inputPath); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func main() {

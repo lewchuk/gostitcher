@@ -1,5 +1,9 @@
 package common
 
+import (
+	"image"
+)
+
 const (
 	BLUE = "BL1"
 	GREEN = "GRN"
@@ -17,3 +21,6 @@ type ImageConfig struct {
 type ConfigFile struct {
 	Files []ImageConfig `json:"files"`
 }
+
+// ImageMap is a type alias for a map of filter strings to gray images.
+type ImageMap = map[string]image.Gray

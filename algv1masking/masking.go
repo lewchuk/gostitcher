@@ -42,28 +42,25 @@ func layerColor(dst draw.Image, grayImage image.Gray, layerColor color.Color) {
 
 // CombineImages runs the v1 masking algorithm to combine a set of grayscale images into
 // a "true" color image.
-func CombineImages(config common.ConfigFile, root string) error {
-	imageMap, err := common.LoadImages(config, root)
-	if err != nil { return err }
-
+func CombineImages(imageMap common.ImageMap, root string) error {
 	// LoadImages validates the presence of RGB images and that they all share the same bounds.
 	blueImage := imageMap[common.BLUE]
 	imageBounds := blueImage.Bounds()
 
 	composedImage := image.NewRGBA(imageBounds)
 
-	layerColor(composedImage, imageMap["BL1"], filterMap["BL1"])
-	layerColor(composedImage, imageMap["GRN"], filterMap["GRN"])
-	layerColor(composedImage, imageMap["RED"], filterMap["RED"])
+	layerColor(composedImage, imageMap[common.BLUE], filterMap[common.BLUE])
+	layerColor(composedImage, imageMap[common.GREEN], filterMap[common.GREEN])
+	layerColor(composedImage, imageMap[common.RED], filterMap[common.RED])
 
-	err = common.WriteImage(path.Join(root, "output_v1_alpha.jpg"), composedImage)
+	err := common.WriteImage(path.Join(root, "output_v1_alpha.jpg"), composedImage)
 	if err != nil { return err }
 
 	composedImage2 := image.NewRGBA(imageBounds)
 
-	layerColor(composedImage2, imageMap["RED"], filterMap["RED"])
-	layerColor(composedImage2, imageMap["GRN"], filterMap["GRN"])
-	layerColor(composedImage2, imageMap["BL1"], filterMap["BL1"])
+	layerColor(composedImage2, imageMap[common.RED], filterMap[common.RED])
+	layerColor(composedImage2, imageMap[common.GREEN], filterMap[common.GREEN])
+	layerColor(composedImage2, imageMap[common.BLUE], filterMap[common.BLUE])
 
 	return common.WriteImage(path.Join(root, "output_v1_beta.jpg"), composedImage2)
 }
