@@ -18,4 +18,4 @@ Red Image|Blue Image
 
 To replicate the channel approach of the tutorial, this approach uses the Gray value from the three images as the RGB values of the resulting color pixel. This approach was much more successful than masking and generated an appropriate image.
 
-![Blended Cropped image of Rhea](images/rhea/output_v2_alpha_crop.jpg)
+![Blended Cropped image of Rhea](images/rhea/output_v2_alpha.jpg)
