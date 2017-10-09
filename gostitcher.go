@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gostitcher/algv1masking"
 	"gostitcher/algv2blending"
+	"gostitcher/algv3aligning"
 	"gostitcher/common"
 	"io/ioutil"
 	"os"
@@ -43,6 +44,10 @@ func processImages(inputPath string) error {
 	}
 
 	if err = algv2blending.CombineImages(imageMap, inputPath); err != nil {
+		return err
+	}
+
+	if err = algv3aligning.AlignImages(imageMap, inputPath); err != nil {
 		return err
 	}
 
