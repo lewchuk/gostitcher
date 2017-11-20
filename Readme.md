@@ -19,3 +19,11 @@ Red Image|Blue Image
 To replicate the channel approach of the tutorial, this approach uses the Gray value from the three images as the RGB values of the resulting color pixel. This approach was much more successful than masking and generated an appropriate image.
 
 ![Blended Cropped image of Rhea](images/rhea/output_v2_alpha.jpg)
+
+### 3. Alignment
+
+This iteration attempted to align images by minimizing the subtracted images. The initial attempt at this did not seem to produce fundamentally better images with the minimization selecting the original alignment for blue and red, and picking an alignment with a clear arc for blue and green. I have not gone any further with this current approach.
+
+Blue Green Original Subtraction|Blue Green "Optimal" Subtraction|Blue Red Original & "Optimal" Subtraction
+--------|----------|--------------
+![Blue Green Original Subtraction](images/rhea/output_v3_bg_align_00.jpg)|![Blue Green "Optimal" Subtraction](images/rhea/output_v3_bg_align_02.jpg)|![Blue Red Original & "Optimal" Subtraction](images/rhea/output_v3_br_align_00.jpg)
