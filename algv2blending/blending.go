@@ -4,7 +4,7 @@ package algv2blending
 import (
 	"image"
 	"image/color"
-	"gostitcher/common"
+	"github.com/lewchuk/gostitcher/common"
 	"path"
 )
 

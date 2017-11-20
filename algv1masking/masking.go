@@ -5,7 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"gostitcher/common"
+	"github.com/lewchuk/gostitcher/common"
 	"path"
 )
 

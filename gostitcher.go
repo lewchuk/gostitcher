@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gostitcher/algv1masking"
-	"gostitcher/algv2blending"
-	"gostitcher/algv3aligning"
-	"gostitcher/common"
+	"github.com/lewchuk/gostitcher/algv1masking"
+	"github.com/lewchuk/gostitcher/algv2blending"
+	"github.com/lewchuk/gostitcher/algv3aligning"
+	"github.com/lewchuk/gostitcher/common"
 	"io/ioutil"
 	"os"
 	"path"
@@ -15,9 +15,9 @@ import (
 // https://space.stackexchange.com/questions/12510/cassinis-camera-continuum-band-filters
 // A map of filter names to effective wavelengths.
 var FilterMap = map[string]int{
-	common.BLUE: 463,
+	common.BLUE:  463,
 	common.GREEN: 568,
-	common.RED: 647,
+	common.RED:   647,
 }
 
 func processImages(inputPath string) error {
@@ -37,7 +37,9 @@ func processImages(inputPath string) error {
 	}
 
 	imageMap, err := common.LoadImages(config, inputPath)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	if err = algv1masking.CombineImages(imageMap, inputPath); err != nil {
 		return err

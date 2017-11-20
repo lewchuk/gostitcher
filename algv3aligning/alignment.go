@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"gostitcher/common"
+	"github.com/lewchuk/gostitcher/common"
 	"path"
 )
 
