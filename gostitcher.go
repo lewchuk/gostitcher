@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/lewchuk/gostitcher/algv1masking"
 	"github.com/lewchuk/gostitcher/algv2blending"
 	"github.com/lewchuk/gostitcher/algv3aligning"
 	"github.com/lewchuk/gostitcher/common"
+	"github.com/lewchuk/gostitcher/opus"
 	"io/ioutil"
 	"os"
 	"path"
@@ -57,7 +59,17 @@ func processImages(inputPath string) error {
 }
 
 func main() {
-	err := processImages(os.Args[1])
+	pathPtr := flag.String("path", "", "path to a local folder with images and config.json")
+	apiPtr := flag.Bool("api", false, "run using OPUS API")
+
+	flag.Parse()
+
+	var err error
+	if (*apiPtr) {
+		err = opus.CombineImages()
+	} else {
+		err = processImages(*pathPtr)
+	}
 
 	if err != nil {
 		fmt.Println(err)
