@@ -2,18 +2,18 @@
 package algv1masking
 
 import (
+	"github.com/lewchuk/gostitcher/common"
 	"image"
 	"image/color"
 	"image/draw"
-	"github.com/lewchuk/gostitcher/common"
 	"path"
 )
 
 // A map from filter colors to a naive RGB color scheme.
 var filterMap = map[string]color.Color{
-	common.BLUE: color.RGBA{0, 0, 255, 255},
+	common.BLUE:  color.RGBA{0, 0, 255, 255},
 	common.GREEN: color.RGBA{0, 255, 0, 255},
-	common.RED: color.RGBA{255, 0, 0, 255},
+	common.RED:   color.RGBA{255, 0, 0, 255},
 }
 
 // convertToAlpha takes a Gray image and converts it to an RGBA image.
@@ -54,7 +54,9 @@ func CombineImages(imageMap common.ImageMap, root string) error {
 	layerColor(composedImage, imageMap[common.RED], filterMap[common.RED])
 
 	err := common.WriteImage(path.Join(root, "output_v1_alpha.jpg"), composedImage)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	composedImage2 := image.NewRGBA(imageBounds)
 

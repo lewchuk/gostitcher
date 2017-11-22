@@ -2,9 +2,9 @@
 package algv2blending
 
 import (
+	"github.com/lewchuk/gostitcher/common"
 	"image"
 	"image/color"
-	"github.com/lewchuk/gostitcher/common"
 	"path"
 )
 
@@ -37,7 +37,9 @@ func CombineImages(imageMap common.ImageMap, root string) error {
 	composedImage := blendImage(imageMap)
 
 	err := common.WriteImage(path.Join(root, "output_v2_alpha.jpg"), composedImage)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

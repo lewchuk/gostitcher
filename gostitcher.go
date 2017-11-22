@@ -65,7 +65,7 @@ func main() {
 	flag.Parse()
 
 	var err error
-	if (*apiPtr) {
+	if *apiPtr {
 		err = opus.CombineImages()
 	} else {
 		err = processImages(*pathPtr)

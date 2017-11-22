@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	BLUE = "BL1"
+	BLUE  = "BL1"
 	GREEN = "GRN"
-	RED = "RED"
+	RED   = "RED"
 )
 
 var Filters = [3]string{BLUE, GREEN, RED}
