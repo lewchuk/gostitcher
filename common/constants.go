@@ -24,3 +24,5 @@ type ConfigFile struct {
 
 // ImageMap is a type alias for a map of filter strings to gray images.
 type ImageMap = map[string]image.Gray
+
+type ImageFilenameMap = map[string]string

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
+
+	"github.com/lewchuk/gostitcher/common"
 )
 
 type OpusAPIResponse struct {
@@ -103,6 +105,42 @@ func translateAPIResonse(data OpusAPIResponse) ([]OpusImage, error) {
 	return images, nil
 }
 
+func groupImages(images []OpusImage) []common.ImageFilenameMap {
+	lastDate, _ := time.Parse("2006-02T15:04:05.000", "1970-01T00:00:00.000")
+	imageGroups := make([]common.ImageFilenameMap, len(images))
+	imageGroupIndex := -1
+
+	for _, image := range images {
+		timeDelta := image.Time.Sub(lastDate)
+		// We are on a new group of images.
+		if timeDelta.Minutes() > 3.0 {
+			// There is a previous group we just finished.
+			if imageGroupIndex >= 0 {
+				if err := common.ValidateImageMap(imageGroups[imageGroupIndex]); err != nil {
+					fmt.Println("Group is not valid:", err)
+					// Decrement index so we over write the inavlid group.
+					imageGroupIndex -= 1
+				}
+			}
+
+			imageGroupIndex += 1
+			fmt.Println("Starting new group:", imageGroupIndex)
+			lastDate = image.Time
+			imageGroups[imageGroupIndex] = make(common.ImageFilenameMap)
+		}
+		fmt.Println(imageGroupIndex, lastDate, image.Time, image.RingObsId, image.Filter, timeDelta, timeDelta.Minutes())
+		imageGroups[imageGroupIndex][image.Filter] = image.RingObsId
+	}
+
+	if err := common.ValidateImageMap(imageGroups[imageGroupIndex]); err != nil {
+		fmt.Println("Group is not valid:", err)
+		// Decrement index so we drop the last group if it is invalid.
+		imageGroupIndex -= 1
+	}
+
+	return imageGroups[:imageGroupIndex+1]
+}
+
 func CombineImages() error {
 
 	// OPUS API components for a single page of images of Enceladus from https://tools.pds-rings.seti.org/opus/api/.
@@ -116,7 +154,7 @@ func CombineImages() error {
 	orderOpt := "order=time1"
 	colOpt := "cols=ringobsid,time1,filter"
 	narrowCameraOpt := "camera=Narrow+Angle"
-	pageSizeOpt := "limit=99"
+	pageSizeOpt := "limit=100"
 
 	// 2 minute range for correlating images.
 	// timeRange := 2 * 60 * 1000
@@ -132,6 +170,8 @@ func CombineImages() error {
 		orderOpt,
 		colOpt,
 		pageSizeOpt)
+
+	fmt.Println(queryURL)
 
 	request, err := http.NewRequest("GET", queryURL, nil)
 
@@ -151,7 +191,9 @@ func CombineImages() error {
 		return err
 	}
 
-	fmt.Println(images)
+	groups := groupImages(images)
+
+	fmt.Println(groups)
 
 	return nil
 }

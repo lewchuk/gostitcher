@@ -32,13 +32,27 @@ func loadImage(imagePath string) (*image.Gray, error) {
 	return grayImg, nil
 }
 
+func ValidateImageMap(imageMap map[string]string) error {
+	for _, filter := range Filters {
+		if _, ok := imageMap[filter]; !ok {
+			var filters []string
+			for k := range imageMap {
+				filters = append(filters, k)
+			}
+			return fmt.Errorf("images missing one or more RGB filters: %s in %s", filter, filters)
+		}
+	}
+	return nil
+}
+
 // LoadImages loads all images based on a config file and a filesystem root.
 // The set of images will be validated as grayscale images and to ensure they
 // represent a complete RGB set of images.
 // It returns a map of filters to images and any errors encountered.
 func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 	var imageBounds image.Rectangle
-	imageMap := make(map[string]image.Gray)
+	imageMap := make(ImageMap)
+	filenameMap := make(ImageFilenameMap)
 
 	for _, imageConfig := range config.Files {
 		fmt.Println("Reading: ", imageConfig.Filename)
@@ -55,17 +69,13 @@ func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 		}
 		imageBounds = newBounds
 		imageMap[imageConfig.Filter] = *img
+		filenameMap[imageConfig.Filter] = imageConfig.Filename
 		fmt.Println("Filter:", imageConfig.Filter)
 	}
 
-	for _, filter := range Filters {
-		if _, ok := imageMap[filter]; !ok {
-			var filters []string
-			for k := range imageMap {
-				filters = append(filters, k)
-			}
-			return nil, fmt.Errorf("images in %s: missing one or more RGB filters: %s in %s", root, filter, filters)
-		}
+	if err := ValidateImageMap(filenameMap); err != nil {
+		return nil, fmt.Errorf("%s: %s", root, err)
 	}
+
 	return imageMap, nil
 }
