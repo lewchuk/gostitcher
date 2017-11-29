@@ -3,14 +3,17 @@ package opus
 import (
 	"encoding/json"
 	"fmt"
+	"image"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
 
+	"github.com/lewchuk/gostitcher/algv2blending"
 	"github.com/lewchuk/gostitcher/common"
 )
 
@@ -25,6 +28,16 @@ type OpusImage struct {
 	ObsKey    string
 	Filter    string
 	Time      time.Time
+}
+
+type OpusFilesAPIResponse struct {
+	Data map[string]OpusFilesAPIImageResponse `json:"data"`
+}
+
+type OpusFilesAPIImageResponse struct {
+	RawImages []string `json:"RAW_IMAGE"`
+	CalibratedImages []string `json:"CALIBRATED"`
+	PreviewImages []string `json:"preview_image"`
 }
 
 func getAPIResponse(request *http.Request) (OpusSearchAPIResponse, error) {
@@ -146,6 +159,123 @@ func groupImages(images []OpusImage) map[string]common.ImageFilenameMap {
 	return imageGroups
 }
 
+func loadImage(obsName, imageId string) (*image.Gray, error) {
+	cacheFolder := fmt.Sprintf("images/opus/%s/", obsName)
+	cachePath := fmt.Sprintf("%s/%s.jpg", cacheFolder, imageId)
+
+	if err := os.MkdirAll(cacheFolder, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("cannot create cache folder %s: %s", cacheFolder, err)
+	}
+
+	if _, err := os.Stat(cachePath); !os.IsNotExist(err) {
+		return common.LoadImageFromPath(cachePath)
+	}
+
+	apiRoot := "https://tools.pds-rings.seti.org/opus/api"
+
+	queryURL := fmt.Sprintf(
+		"%s/files/%s.json",
+		apiRoot,
+		imageId,
+	)
+
+	request, err := http.NewRequest("GET", queryURL, nil)
+
+	if err != nil {
+		return nil, fmt.Errorf("creating request for %s: %s", queryURL, err)
+	}
+
+	client := cleanhttp.DefaultClient()
+
+	resp, err := client.Do(request)
+
+	if err != nil {
+		return nil, fmt.Errorf("requesting from %s: %s", request.URL, err)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, fmt.Errorf("loading api response %s: %s", request.URL, err)
+	}
+
+	data := OpusFilesAPIResponse{}
+
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, fmt.Errorf("parsing api response %s: %s", body, err)
+	}
+
+	files := data.Data[imageId].PreviewImages
+
+	var fullImage string
+
+	for _, path := range files {
+		if strings.HasSuffix(path, "full.jpg") {
+			fullImage = path
+			break
+		}
+	}
+
+	if fullImage == "" {
+		return nil, fmt.Errorf("no full preview image in %s", files)
+	}
+
+	fmt.Println("Loading", fullImage)
+
+	request, err = http.NewRequest("GET", fullImage, nil)
+
+	if err != nil {
+		return nil, fmt.Errorf("creating request for %s: %s", fullImage, err)
+	}
+
+	resp, err = client.Do(request)
+
+	if err != nil {
+		return nil, fmt.Errorf("requesting from %s: %s", request.URL, err)
+	}
+
+	defer resp.Body.Close()
+
+	image, err := common.LoadImage(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error loading image from %s: %s", fullImage, err)
+	}
+
+	err = common.WriteImage(cachePath, image)
+
+	if err != nil {
+		return nil, fmt.Errorf("error caching image at %s: %s", cachePath, err)
+	}
+
+	return image, nil
+}
+
+func combineImages(obsName string, idMap common.ImageFilenameMap) error {
+	imageMap := make(common.ImageMap)
+
+	for _, filter := range common.Filters {
+		image, err := loadImage(obsName, idMap[filter])
+		if err != nil {
+			return err
+		}
+		imageMap[filter] = *image
+	}
+
+	outpuImage := algv2blending.BlendImage(imageMap)
+
+	outputPath := fmt.Sprintf("images/opus/%s/%s.jpg", obsName, obsName)
+
+	err := common.WriteImage(outputPath, outpuImage)
+
+	if err != nil {
+		return fmt.Errorf("error writing image to %s: %s", outputPath, err)
+	}
+
+	return nil
+}
+
 func CombineImages() error {
 
 	// OPUS API components for a single page of images of Enceladus from https://tools.pds-rings.seti.org/opus/api/.
@@ -195,9 +325,12 @@ func CombineImages() error {
 
 	groups := groupImages(images)
 
-	fmt.Println(groups)
-
-	fmt.Println(groups["ISS_004EN_OBSERV002_PRIME"])
+	for obsName, imageMap := range groups {
+		err = combineImages(obsName, imageMap)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
