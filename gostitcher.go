@@ -60,13 +60,13 @@ func processImages(inputPath string) error {
 
 func main() {
 	pathPtr := flag.String("path", "", "path to a local folder with images and config.json")
-	apiPtr := flag.Bool("api", false, "run using OPUS API")
+	apiPtr := flag.String("api", "", "target to fetch data using OPUS API")
 
 	flag.Parse()
 
 	var err error
-	if *apiPtr {
-		err = opus.CombineImages()
+	if *apiPtr != "" {
+		err = opus.CombineImages(*apiPtr)
 	} else {
 		err = processImages(*pathPtr)
 	}
