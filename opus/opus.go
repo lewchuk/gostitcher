@@ -14,7 +14,7 @@ import (
 	"github.com/lewchuk/gostitcher/common"
 )
 
-type OpusAPIResponse struct {
+type OpusSearchAPIResponse struct {
 	PageNo  int        `json:"page_no"`
 	Columns []string   `json:"columns"`
 	Images  [][]string `json:"page"`
@@ -22,14 +22,15 @@ type OpusAPIResponse struct {
 
 type OpusImage struct {
 	RingObsId string
-	Time      time.Time
+	ObsKey    string
 	Filter    string
+	Time      time.Time
 }
 
-func getAPIResponse(request *http.Request) (OpusAPIResponse, error) {
+func getAPIResponse(request *http.Request) (OpusSearchAPIResponse, error) {
 	client := cleanhttp.DefaultClient()
 
-	var data OpusAPIResponse
+	var data OpusSearchAPIResponse
 
 	resp, err := client.Do(request)
 
@@ -45,7 +46,7 @@ func getAPIResponse(request *http.Request) (OpusAPIResponse, error) {
 		return data, fmt.Errorf("loading api response %s: %s", request.URL, err)
 	}
 
-	data = OpusAPIResponse{}
+	data = OpusSearchAPIResponse{}
 
 	if err := json.Unmarshal(body, &data); err != nil {
 		return data, fmt.Errorf("parsing api response %s: %s", body, err)
@@ -67,19 +68,21 @@ func findIndex(val string, content []string) int {
 	return index
 }
 
-func translateAPIResonse(data OpusAPIResponse) ([]OpusImage, error) {
+func translateAPIResonse(data OpusSearchAPIResponse) ([]OpusImage, error) {
 	idIndex := findIndex("Ring Observation ID", data.Columns)
+	obsIndex := findIndex("Observation Name", data.Columns)
 	timeIndex := findIndex("Observation Time 1 (UTC)", data.Columns)
 	filterIndex := findIndex("Filter", data.Columns)
 
-	if idIndex == -1 || timeIndex == -1 || filterIndex == -1 {
+	if idIndex == -1 || obsIndex == -1 || filterIndex == -1 || timeIndex == -1 {
 		return nil, fmt.Errorf(
-			"Getting column indexes from %s (id: %d, time: %d, filter: %d)",
-			data.Columns, idIndex, timeIndex, filterIndex)
+			"Getting column indexes from %s (id: %d, obs: %d, time: %s, filter: %d)",
+			data.Columns, idIndex, obsIndex, timeIndex, filterIndex)
 	}
 
 	images := make([]OpusImage, len(data.Images))
 	for i, imgArray := range data.Images {
+
 		timeS := imgArray[timeIndex]
 		// Replace the day of year with a dummy value singe golang time doesn't support day of year.
 		dayOfYear, err := strconv.Atoi(timeS[5:8])
@@ -97,48 +100,50 @@ func translateAPIResonse(data OpusAPIResponse) ([]OpusImage, error) {
 
 		images[i] = OpusImage{
 			RingObsId: imgArray[idIndex],
-			Time:      dateTimeTaken,
+			ObsKey:    imgArray[obsIndex],
 			Filter:    imgArray[filterIndex],
+			Time: dateTimeTaken,
 		}
 	}
 
 	return images, nil
 }
 
-func groupImages(images []OpusImage) []common.ImageFilenameMap {
-	lastDate, _ := time.Parse("2006-02T15:04:05.000", "1970-01T00:00:00.000")
-	imageGroups := make([]common.ImageFilenameMap, len(images))
+func groupImages(images []OpusImage) map[string]common.ImageFilenameMap {
+	lastObs := ""
+	imageGroups := make(map[string]common.ImageFilenameMap)
 	imageGroupIndex := -1
 
 	for _, image := range images {
-		timeDelta := image.Time.Sub(lastDate)
 		// We are on a new group of images.
-		if timeDelta.Minutes() > 3.0 {
+		if lastObs != image.ObsKey {
 			// There is a previous group we just finished.
-			if imageGroupIndex >= 0 {
-				if err := common.ValidateImageMap(imageGroups[imageGroupIndex]); err != nil {
+			if lastObs != "" {
+				if err := common.ValidateImageMap(imageGroups[lastObs]); err != nil {
 					fmt.Println("Group is not valid:", err)
-					// Decrement index so we over write the inavlid group.
-					imageGroupIndex -= 1
+					// Delete group so we don't try to process it more.
+					delete(imageGroups, lastObs)
 				}
 			}
 
-			imageGroupIndex += 1
+			lastObs = image.ObsKey
 			fmt.Println("Starting new group:", imageGroupIndex)
-			lastDate = image.Time
-			imageGroups[imageGroupIndex] = make(common.ImageFilenameMap)
+			imageGroups[lastObs] = make(common.ImageFilenameMap)
 		}
-		fmt.Println(imageGroupIndex, lastDate, image.Time, image.RingObsId, image.Filter, timeDelta, timeDelta.Minutes())
-		imageGroups[imageGroupIndex][image.Filter] = image.RingObsId
+		fmt.Println(imageGroupIndex, image)
+		// TODO: Take the set of Filter/Time tuples and pick the three images
+		// with the least time deltas, probably using blue as a start point
+		// since those images seem to be more rare in clusters of images.
+		imageGroups[lastObs][image.Filter] = image.RingObsId
 	}
 
-	if err := common.ValidateImageMap(imageGroups[imageGroupIndex]); err != nil {
+	if err := common.ValidateImageMap(imageGroups[lastObs]); err != nil {
 		fmt.Println("Group is not valid:", err)
-		// Decrement index so we drop the last group if it is invalid.
-		imageGroupIndex -= 1
+		// Delete group so we don't try to process it more.
+		delete(imageGroups, lastObs)
 	}
 
-	return imageGroups[:imageGroupIndex+1]
+	return imageGroups
 }
 
 func CombineImages() error {
@@ -152,12 +157,9 @@ func CombineImages() error {
 	enceladusTargetOpt := "target=ENCELADUS"
 	filterOpts := "FILTER=BL1,GRN,RED"
 	orderOpt := "order=time1"
-	colOpt := "cols=ringobsid,time1,filter"
+	colOpt := "cols=ringobsid,obsname,filter,time1"
 	narrowCameraOpt := "camera=Narrow+Angle"
 	pageSizeOpt := "limit=100"
-
-	// 2 minute range for correlating images.
-	// timeRange := 2 * 60 * 1000
 
 	queryURL := fmt.Sprintf(
 		"%s/data.json?%s&%s&%s&%s&%s&%s&%s&%s&page=1",
@@ -194,6 +196,8 @@ func CombineImages() error {
 	groups := groupImages(images)
 
 	fmt.Println(groups)
+
+	fmt.Println(groups["ISS_004EN_OBSERV002_PRIME"])
 
 	return nil
 }
