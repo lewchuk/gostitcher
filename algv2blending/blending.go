@@ -10,7 +10,7 @@ import (
 
 // blendImage combines separte RGB grayscale images into a single RGB image.
 // It returns the generated image.
-func blendImage(imageMap common.ImageMap) image.Image {
+func BlendImage(imageMap common.ImageMap) image.Image {
 	blueImage := imageMap[common.BLUE]
 	greenImage := imageMap[common.GREEN]
 	redImage := imageMap[common.RED]
@@ -34,7 +34,7 @@ func blendImage(imageMap common.ImageMap) image.Image {
 // CombineImages runs the v2 blending algorithm to combine a set of grayscale images into
 // a "true" color image.
 func CombineImages(imageMap common.ImageMap, root string) error {
-	composedImage := blendImage(imageMap)
+	composedImage := BlendImage(imageMap)
 
 	err := common.WriteImage(path.Join(root, "output_v2_alpha.jpg"), composedImage)
 	if err != nil {
