@@ -4,32 +4,42 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io"
 	"os"
 	"path"
 )
 
-// loadImage, loads an image from a path and validates that it is a grayscale image.
-// It returns the image as a properly typed Gray image and any error encountered.
-func loadImage(imagePath string) (*image.Gray, error) {
-	f, err := os.Open(imagePath)
-	defer f.Close()
+func LoadImage(data io.Reader) (*image.Gray, error) {
+	img, err := jpeg.Decode(data)
 
 	if err != nil {
-		return nil, err
-	}
-
-	img, err := jpeg.Decode(f)
-
-	if err != nil {
-		return nil, fmt.Errorf("decoding image %s: %s", imagePath, err)
+		return nil, fmt.Errorf("error decoding image: %s", err)
 	}
 
 	grayImg, ok := img.(*image.Gray)
 	if !ok {
-		return nil, fmt.Errorf("image %s: not grayscale (%s), can't process", imagePath, img.ColorModel())
+		return nil, fmt.Errorf("image not grayscale (%s), can't process", img.ColorModel())
 	}
 
 	return grayImg, nil
+}
+
+// LoadImageFromPath, loads an image from a path and validates that it is a grayscale image.
+// It returns the image as a properly typed Gray image and any error encountered.
+func LoadImageFromPath(imagePath string) (*image.Gray, error) {
+	f, err := os.Open(imagePath)
+	defer f.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("error opening image %s: %s", imagePath, err)
+	}
+
+	image, err := LoadImage(f)
+	if err != nil {
+		return nil, fmt.Errorf("error loading image %s: %s", imagePath, err)
+	}
+
+	return image, nil
 }
 
 func ValidateImageMap(imageMap map[string]string) error {
@@ -57,7 +67,7 @@ func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 	for _, imageConfig := range config.Files {
 		fmt.Println("Reading: ", imageConfig.Filename)
 		fullPath := path.Join(root, imageConfig.Filename)
-		img, err := loadImage(fullPath)
+		img, err := LoadImageFromPath(fullPath)
 		if err != nil {
 			return nil, err
 		}
