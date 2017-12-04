@@ -295,18 +295,39 @@ func loadImage(obsName, imageId, outputFolder string) (*image.Gray, error) {
 // combineImages combines a set of images representing a single observation.
 func combineImages(obsName string, idMap common.ImageFilenameMap, outputFolder string) error {
 	imageMap := make(common.ImageMap)
+	imageArray := make([]common.ImageConfig, 3)
 
-	for _, filter := range common.Filters {
+	for i, filter := range common.Filters {
 		image, err := loadImage(obsName, idMap[filter], outputFolder)
 		if err != nil {
 			return err
 		}
 		imageMap[filter] = *image
+		imageArray[i] = common.ImageConfig{
+			Filter: filter,
+			Filename: fmt.Sprintf("%s.jpg", idMap[filter]),
+		}
 	}
+
+	observationPath := fmt.Sprintf("%s/%s", outputFolder, obsName)
+
+	configFile := common.ConfigFile{
+		Files: imageArray,
+	}
+	configJson, err := json.MarshalIndent(configFile, "", "  ")
+	if err != nil {
+		return fmt.Errorf("cannot serialize config json %s: %s", configFile, err)
+	}
+
+	configPath := fmt.Sprintf("%s/config.json", observationPath)
+	err = ioutil.WriteFile(configPath, configJson, os.ModePerm)
+    if err != nil {
+    	return fmt.Errorf("cannot write config json to %s: %s", configPath, err)
+    }
 
 	outpuImage := algv2blending.BlendImage(imageMap)
 
-	outputPath := fmt.Sprintf("%s/%s/%s.jpg", outputFolder, obsName, obsName)
+	outputPath := fmt.Sprintf("%s/%s.jpg", observationPath, obsName)
 
 	if err := common.WriteImage(outputPath, outpuImage); err != nil {
 		return fmt.Errorf("error writing image to %s: %s", outputPath, err)
@@ -321,38 +342,45 @@ func combineImages(obsName string, idMap common.ImageFilenameMap, outputFolder s
 	return nil
 }
 
-func CombineImages(rawTarget string) error {
+func ProcessImages(outputFolder, camera, optTarget, optObsrvation, extra string) error {
 
-	target := strings.ToUpper(rawTarget)
-	outputLocation := fmt.Sprintf("images/opus/%s", rawTarget)
-
-	if err := os.MkdirAll(fmt.Sprintf("%s/results", outputLocation), os.ModePerm); err != nil {
+	if err := os.MkdirAll(fmt.Sprintf("%s/results", outputFolder), os.ModePerm); err != nil {
 		return fmt.Errorf("cannot create resulsts folder: %s", err)
 	}
 
-	// OPUS API components for a page of images from the Cassini ISS instrument
-	// from https://tools.pds-rings.seti.org/opus/api/.
-	// Result metadata filtered to just narrow angle RED, BL1 and GRN images.
-	apiRoot := "https://tools.pds-rings.seti.org/opus/api"
+	// Limit to Cassini Images since they have the filter parameter.
 	cassiniISSOpts := "instrumentid=Cassini+ISS&typeid=Image"
-	saturnOpt := "planet=Saturn"
-	enceladusTargetOpt := fmt.Sprintf("target=%s", target)
+	// Limit to the RGB images.
 	filterOpts := "FILTER=BL1,GRN,RED"
+	// Order by time to group the observations.
 	orderOpt := "order=time1"
+	// The pieces of information we want for each image.
 	colOpt := "cols=ringobsid,obsname,filter,time1"
-	narrowCameraOpt := "camera=Narrow+Angle"
+	// Limit the search to 100 images at a time.
 	pageSizeOpt := "limit=100"
+	// Select only one camera at a time.
+	cameraOpt := fmt.Sprintf("camera=%s+Angle", camera)
 
 	searchParams := fmt.Sprintf(
-		"%s&%s&%s&%s&%s&%s&%s&%s",
+		"%s&%s&%s&%s&%s&%s",
 		cassiniISSOpts,
-		saturnOpt,
-		enceladusTargetOpt,
 		filterOpts,
-		narrowCameraOpt,
 		orderOpt,
 		colOpt,
+		cameraOpt,
 		pageSizeOpt)
+
+	if optTarget != "" {
+		searchParams = fmt.Sprintf("%s&target=%s", searchParams, optTarget)
+	}
+
+	if optObsrvation != "" {
+		searchParams = fmt.Sprintf("%s&obsname=%s", searchParams, optObsrvation)
+	}
+
+	if extra != "" {
+		searchParams = fmt.Sprintf("%s&%s", searchParams, extra)
+	}
 
 	countURL := fmt.Sprintf(
 		"%s/meta/result_count.json?%s",
@@ -367,6 +395,8 @@ func CombineImages(rawTarget string) error {
 
 	count := countData.Data[0].ResultCount
 
+	fmt.Println("Images in search:", count)
+
 	baseURL := fmt.Sprintf(
 		"%s/data.json?%s",
 		ApiRoot,
@@ -376,7 +406,7 @@ func CombineImages(rawTarget string) error {
 
 	images := make([]OpusImage, 0, count)
 
-	for i := 1; i <= count/100; i++ {
+	for i := 1; i <= count/100 + 1; i++ {
 	    queryURL := fmt.Sprintf("%s&page=%d", baseURL, i)
 	    fmt.Println(queryURL)
 	    data, err := getDataAPIResponse(queryURL)
@@ -397,7 +427,7 @@ func CombineImages(rawTarget string) error {
 	groups := groupImages(images)
 
 	for obsName, imageMap := range groups {
-		err := combineImages(obsName, imageMap, outputLocation)
+		err := combineImages(obsName, imageMap, outputFolder)
 		if err != nil {
 			return err
 		}

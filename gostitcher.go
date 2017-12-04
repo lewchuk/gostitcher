@@ -59,16 +59,27 @@ func processImages(inputPath string) error {
 }
 
 func main() {
-	pathPtr := flag.String("path", "", "path to a local folder with images and config.json")
-	apiPtr := flag.String("api", "", "target to fetch data using OPUS API")
+	pathPtr := flag.String("path", "", "path to a local folder with images and config.json. " +
+		"Not compatible with the --api flag and will override any other flags if present.")
+	apiPtr := flag.String("api", "", "use the OPUS API to pull down Cassini images to combine. Provide the output folder to place the images in.")
+	cameraPtr := flag.String("camera", "narrow", "either 'narrow' (default) or 'wide' to select which Cassini camera. The same observation often includes images from both cameras so they cannot be fetched at once.")
+	targetPtr := flag.String("target", "", "the target filter for the OPUS API (optional).")
+	observationPtr := flag.String("observation", "", "the observation name for the OPUS API (optional).")
+	extraPtr := flag.String("extra", "", "extra filters to add to the search URL, e.g. planet=Jupiter.")
 
 	flag.Parse()
 
 	var err error
-	if *apiPtr != "" {
-		err = opus.CombineImages(*apiPtr)
-	} else {
+	if *pathPtr != "" {
 		err = processImages(*pathPtr)
+	} else if *apiPtr != "" {
+		if *cameraPtr != "narrow" && *cameraPtr != "wide" {
+			err = fmt.Errorf("--camera must be either 'narrow' or 'wide': %s", *cameraPtr)
+		} else {
+			err = opus.ProcessImages(*apiPtr, *cameraPtr, *targetPtr, *observationPtr, *extraPtr)
+		}
+	} else {
+		err = fmt.Errorf("Either --path parameter or --api flag must be provided.")
 	}
 
 	if err != nil {
