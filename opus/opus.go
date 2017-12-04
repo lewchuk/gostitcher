@@ -49,6 +49,8 @@ type OpusFilesAPIImageResponse struct {
 	PreviewImages []string `json:"preview_image"`
 }
 
+var ApiRoot = "https://tools.pds-rings.seti.org/opus/api"
+
 // getAPIQuery requests a URL and returns a reader of the response
 func getAPIQuery(url string) (io.ReadCloser, error) {
 	request, err := http.NewRequest("GET", url, nil)
@@ -235,11 +237,9 @@ func loadImage(obsName, imageId, outputFolder string) (*image.Gray, error) {
 		return common.LoadImageFromPath(cachePath)
 	}
 
-	apiRoot := "https://tools.pds-rings.seti.org/opus/api"
-
 	queryURL := fmt.Sprintf(
 		"%s/files/%s.json",
-		apiRoot,
+		ApiRoot,
 		imageId,
 	)
 
@@ -356,7 +356,7 @@ func CombineImages(rawTarget string) error {
 
 	countURL := fmt.Sprintf(
 		"%s/meta/result_count.json?%s",
-		apiRoot,
+		ApiRoot,
 		searchParams)
 
 	countData, err := getCountAPIResponse(countURL)
@@ -369,7 +369,7 @@ func CombineImages(rawTarget string) error {
 
 	baseURL := fmt.Sprintf(
 		"%s/data.json?%s",
-		apiRoot,
+		ApiRoot,
 		searchParams)
 
 	fmt.Println(baseURL)
