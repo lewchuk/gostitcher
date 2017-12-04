@@ -186,7 +186,7 @@ func translateDataAPIResonse(data OpusDataAPIResponse) ([]OpusImage, error) {
 func groupImages(images []OpusImage) map[string]common.ImageFilenameMap {
 	lastObs := ""
 	imageGroups := make(map[string]common.ImageFilenameMap)
-	imageGroupIndex := -1
+	imageGroupIndex := 0
 
 	for _, image := range images {
 		// We are on a new group of images.
@@ -197,10 +197,12 @@ func groupImages(images []OpusImage) map[string]common.ImageFilenameMap {
 					fmt.Println("Group is not valid:", err)
 					// Delete group so we don't try to process it more.
 					delete(imageGroups, lastObs)
+					imageGroupIndex--;
 				}
 			}
 
 			lastObs = image.ObsKey
+			imageGroupIndex++;
 			fmt.Println("Starting new group:", imageGroupIndex)
 			imageGroups[lastObs] = make(common.ImageFilenameMap)
 		}
