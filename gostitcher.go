@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/lewchuk/gostitcher/algv1masking"
@@ -9,9 +8,7 @@ import (
 	"github.com/lewchuk/gostitcher/algv3aligning"
 	"github.com/lewchuk/gostitcher/common"
 	"github.com/lewchuk/gostitcher/opus"
-	"io/ioutil"
 	"os"
-	"path"
 )
 
 // https://space.stackexchange.com/questions/12510/cassinis-camera-continuum-band-filters
@@ -25,18 +22,7 @@ var FilterMap = map[string]int{
 func processImages(inputPath string) error {
 	fmt.Printf("Processing: %s\n", inputPath)
 
-	configPath := path.Join(inputPath, "config.json")
-	configS, err := ioutil.ReadFile(configPath)
-
-	if err != nil {
-		return err
-	}
-
-	config := common.ConfigFile{}
-
-	if err := json.Unmarshal(configS, &config); err != nil {
-		return fmt.Errorf("parsing config %s: %s", configPath, err)
-	}
+	config, err := common.LoadConfig(inputPath)
 
 	imageMap, err := common.LoadImages(config, inputPath)
 	if err != nil {

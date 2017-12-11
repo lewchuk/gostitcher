@@ -89,3 +89,19 @@ func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 
 	return imageMap, nil
 }
+
+func LoadConfig(root string) (ConfigFile, error) {
+	config := ConfigFile{}
+	configPath := path.Join(root, "config.json")
+	configS, err := ioutil.ReadFile(configPath)
+
+	if err != nil {
+		return config, err
+	}
+
+	if err := json.Unmarshal(configS, &config); err != nil {
+		return config, fmt.Errorf("parsing config %s: %s", configPath, err)
+	}
+
+	return config, nil
+}
