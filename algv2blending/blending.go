@@ -11,9 +11,9 @@ import (
 // blendImage combines separte RGB grayscale images into a single RGB image.
 // It returns the generated image.
 func BlendImage(imageMap common.ImageMap) image.Image {
-	blueImage := imageMap[common.BLUE]
-	greenImage := imageMap[common.GREEN]
-	redImage := imageMap[common.RED]
+	blueImage := imageMap[common.BLUE].Image
+	greenImage := imageMap[common.GREEN].Image
+	redImage := imageMap[common.RED].Image
 
 	bounds := blueImage.Bounds()
 	composedImage := image.NewRGBA(bounds)

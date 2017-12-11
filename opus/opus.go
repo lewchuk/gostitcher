@@ -44,9 +44,9 @@ type OpusFilesAPIResponse struct {
 }
 
 type OpusFilesAPIImageResponse struct {
-	RawImages []string `json:"RAW_IMAGE"`
+	RawImages        []string `json:"RAW_IMAGE"`
 	CalibratedImages []string `json:"CALIBRATED"`
-	PreviewImages []string `json:"preview_image"`
+	PreviewImages    []string `json:"preview_image"`
 }
 
 var ApiRoot = "https://tools.pds-rings.seti.org/opus/api"
@@ -176,7 +176,7 @@ func translateDataAPIResonse(data OpusDataAPIResponse) ([]OpusImage, error) {
 			RingObsId: imgArray[idIndex],
 			ObsKey:    imgArray[obsIndex],
 			Filter:    imgArray[filterIndex],
-			Time: dateTimeTaken,
+			Time:      dateTimeTaken,
 		}
 	}
 
@@ -199,12 +199,12 @@ func groupImages(images []OpusImage) map[string]common.ImageFilenameMap {
 					fmt.Println("Group is not valid:", err)
 					// Delete group so we don't try to process it more.
 					delete(imageGroups, lastObs)
-					imageGroupIndex--;
+					imageGroupIndex--
 				}
 			}
 
 			lastObs = image.ObsKey
-			imageGroupIndex++;
+			imageGroupIndex++
 			fmt.Println("Starting new group:", imageGroupIndex)
 			imageGroups[lastObs] = make(common.ImageFilenameMap)
 		}
@@ -302,40 +302,36 @@ func combineImages(obsName string, idMap common.ImageFilenameMap, outputFolder s
 		if err != nil {
 			return err
 		}
-		imageMap[filter] = *image
 		imageArray[i] = common.ImageConfig{
-			Filter: filter,
+			Filter:   filter,
 			Filename: fmt.Sprintf("%s.jpg", idMap[filter]),
+			OffsetX:  0,
+			OffsetY:  0,
 		}
+		imageMap[filter] = common.LoadedConfig{imageArray[i], *image}
 	}
 
 	observationPath := fmt.Sprintf("%s/%s", outputFolder, obsName)
 
 	configFile := common.ConfigFile{
-		Files: imageArray,
+		MaxOffset: 0,
+		Files:     imageArray,
 	}
-	configJson, err := json.MarshalIndent(configFile, "", "  ")
-	if err != nil {
-		return fmt.Errorf("cannot serialize config json %s: %s", configFile, err)
+	if err := common.WriteConfig(observationPath, configFile); err != nil {
+		return err
 	}
 
-	configPath := fmt.Sprintf("%s/config.json", observationPath)
-	err = ioutil.WriteFile(configPath, configJson, os.ModePerm)
-    if err != nil {
-    	return fmt.Errorf("cannot write config json to %s: %s", configPath, err)
-    }
-
-	outpuImage := algv2blending.BlendImage(imageMap)
+	outputImage := algv2blending.BlendImage(imageMap)
 
 	outputPath := fmt.Sprintf("%s/%s.jpg", observationPath, obsName)
 
-	if err := common.WriteImage(outputPath, outpuImage); err != nil {
+	if err := common.WriteImage(outputPath, outputImage); err != nil {
 		return fmt.Errorf("error writing image to %s: %s", outputPath, err)
 	}
 
 	outputPath = fmt.Sprintf("%s/results/%s.jpg", outputFolder, obsName)
 
-	if err := common.WriteImage(outputPath, outpuImage); err != nil {
+	if err := common.WriteImage(outputPath, outputImage); err != nil {
 		return fmt.Errorf("error writing image to %s: %s", outputPath, err)
 	}
 
@@ -406,10 +402,10 @@ func ProcessImages(outputFolder, camera, optTarget, optObsrvation, extra string)
 
 	images := make([]OpusImage, 0, count)
 
-	for i := 1; i <= count/100 + 1; i++ {
-	    queryURL := fmt.Sprintf("%s&page=%d", baseURL, i)
-	    fmt.Println(queryURL)
-	    data, err := getDataAPIResponse(queryURL)
+	for i := 1; i <= count/100+1; i++ {
+		queryURL := fmt.Sprintf("%s&page=%d", baseURL, i)
+		fmt.Println(queryURL)
+		data, err := getDataAPIResponse(queryURL)
 
 		if err != nil {
 			return err

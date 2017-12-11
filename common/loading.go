@@ -1,10 +1,12 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 )
@@ -78,7 +80,7 @@ func LoadImages(config ConfigFile, root string) (ImageMap, error) {
 				fullPath, newBounds, imageBounds)
 		}
 		imageBounds = newBounds
-		imageMap[imageConfig.Filter] = *img
+		imageMap[imageConfig.Filter] = LoadedConfig{imageConfig, *img}
 		filenameMap[imageConfig.Filter] = imageConfig.Filename
 		fmt.Println("Filter:", imageConfig.Filter)
 	}

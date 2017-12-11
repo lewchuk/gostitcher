@@ -44,14 +44,14 @@ func layerColor(dst draw.Image, grayImage image.Gray, layerColor color.Color) {
 // a "true" color image.
 func CombineImages(imageMap common.ImageMap, root string) error {
 	// LoadImages validates the presence of RGB images and that they all share the same bounds.
-	blueImage := imageMap[common.BLUE]
+	blueImage := imageMap[common.BLUE].Image
 	imageBounds := blueImage.Bounds()
 
 	composedImage := image.NewRGBA(imageBounds)
 
-	layerColor(composedImage, imageMap[common.BLUE], filterMap[common.BLUE])
-	layerColor(composedImage, imageMap[common.GREEN], filterMap[common.GREEN])
-	layerColor(composedImage, imageMap[common.RED], filterMap[common.RED])
+	layerColor(composedImage, imageMap[common.BLUE].Image, filterMap[common.BLUE])
+	layerColor(composedImage, imageMap[common.GREEN].Image, filterMap[common.GREEN])
+	layerColor(composedImage, imageMap[common.RED].Image, filterMap[common.RED])
 
 	err := common.WriteImage(path.Join(root, "output_v1_alpha.jpg"), composedImage)
 	if err != nil {
@@ -60,9 +60,9 @@ func CombineImages(imageMap common.ImageMap, root string) error {
 
 	composedImage2 := image.NewRGBA(imageBounds)
 
-	layerColor(composedImage2, imageMap[common.RED], filterMap[common.RED])
-	layerColor(composedImage2, imageMap[common.GREEN], filterMap[common.GREEN])
-	layerColor(composedImage2, imageMap[common.BLUE], filterMap[common.BLUE])
+	layerColor(composedImage2, imageMap[common.RED].Image, filterMap[common.RED])
+	layerColor(composedImage2, imageMap[common.GREEN].Image, filterMap[common.GREEN])
+	layerColor(composedImage2, imageMap[common.BLUE].Image, filterMap[common.BLUE])
 
 	return common.WriteImage(path.Join(root, "output_v1_beta.jpg"), composedImage2)
 }

@@ -19,7 +19,7 @@ var FilterMap = map[string]int{
 	common.RED:   647,
 }
 
-func processImages(inputPath string) error {
+func processImages(inputPath string, maxOffset int) error {
 	fmt.Printf("Processing: %s\n", inputPath)
 
 	config, err := common.LoadConfig(inputPath)
@@ -37,7 +37,7 @@ func processImages(inputPath string) error {
 		return err
 	}
 
-	if err = algv3aligning.AlignImages(imageMap, inputPath); err != nil {
+	if err = algv3aligning.CombineAndAlignImages(config, imageMap, maxOffset, inputPath); err != nil {
 		return err
 	}
 
@@ -45,8 +45,9 @@ func processImages(inputPath string) error {
 }
 
 func main() {
-	pathPtr := flag.String("path", "", "path to a local folder with images and config.json. " +
+	pathPtr := flag.String("path", "", "path to a local folder with images and config.json. "+
 		"Not compatible with the --api flag and will override any other flags if present.")
+	alignPtr := flag.Int("align", 0, "max offsets to try and align images, only valid with --path")
 	apiPtr := flag.String("api", "", "use the OPUS API to pull down Cassini images to combine. Provide the output folder to place the images in.")
 	cameraPtr := flag.String("camera", "narrow", "either 'narrow' (default) or 'wide' to select which Cassini camera. The same observation often includes images from both cameras so they cannot be fetched at once.")
 	targetPtr := flag.String("target", "", "the target filter for the OPUS API (optional).")
@@ -57,7 +58,7 @@ func main() {
 
 	var err error
 	if *pathPtr != "" {
-		err = processImages(*pathPtr)
+		err = processImages(*pathPtr, *alignPtr)
 	} else if *apiPtr != "" {
 		if *cameraPtr != "narrow" && *cameraPtr != "wide" {
 			err = fmt.Errorf("--camera must be either 'narrow' or 'wide': %s", *cameraPtr)
