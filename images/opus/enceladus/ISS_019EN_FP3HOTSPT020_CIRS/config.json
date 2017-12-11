@@ -1,0 +1,23 @@
+{
+  "files": [
+    {
+      "filename": "S_IMG_CO_ISS_1514141388_N.jpg",
+      "filter": "BL1",
+      "offsetX": 0,
+      "offsetY": 0
+    },
+    {
+      "filename": "S_IMG_CO_ISS_1514141371_N.jpg",
+      "filter": "GRN",
+      "offsetX": -1,
+      "offsetY": -44
+    },
+    {
+      "filename": "S_IMG_CO_ISS_1514141354_N.jpg",
+      "filter": "RED",
+      "offsetX": -4,
+      "offsetY": -89
+    }
+  ],
+  "maxOffset": 100
+}
