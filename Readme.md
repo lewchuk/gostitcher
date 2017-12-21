@@ -40,11 +40,31 @@ To replicate the channel approach of the tutorial, this approach uses the Gray v
 
 ### 3. Alignment
 
-This iteration attempted to align images by minimizing the subtracted images. The initial attempt at this did not seem to produce fundamentally better images with the minimization selecting the original alignment for blue and red, and picking an alignment with a clear arc for blue and green. I have not gone any further with this current approach.
+This iteration attempts to align images by minimizing the subtracted images. The initial attempt at this did not seem to produce fundamentally better images with the minimization selecting the original alignment for blue and red, and picking an alignment with a clear arc for blue and green as seen below:
 
 Blue Green Original Subtraction|Blue Green "Optimal" Subtraction|Blue Red Original & "Optimal" Subtraction
 --------|----------|--------------
 ![Blue Green Original Subtraction](images/rhea/output_v3_bg_align_00.jpg)|![Blue Green "Optimal" Subtraction](images/rhea/output_v3_bg_align_02.jpg)|![Blue Red Original & "Optimal" Subtraction](images/rhea/output_v3_br_align_00.jpg)
+
+However, after seeing a highly shifted set of images of Enceladus and applying the same algorithm again, it performed much better. I suspect that the the background colour of the Rhea images and thus the difference in intensity between the various filters overwhelms the differences in intensity caused by misalignment.
+
+Original Blended Image|Aligned Blended Image
+----|----
+![Original Blended Image](images/opus/enceladus/output_v2_alpha.jpg)|![Aligned Blended Image](images/opus/enceladus/output_v3.jpg)
+----|----
+Original Blue Green Subtraction|Aligned Blue Green Subtraction (-1, -44)
+----|----
+![Original Blue Green Subtraction](images/opus/enceladus/output_v3_bg_align_00.jpg)|![Aligned Blue Green Subtraction (-1, -44)](images/opus/enceladus/output_v3_bg_align_-1-44.jpg)
+----|----
+Original Blue Red Subtraction|Aligned Blue Red Subtraction (-1, -44)
+----|----
+![Original Blue Red Subtraction](images/opus/enceladus/output_v3_br_align_00.jpg)|![Aligned Blue Red Subtraction (-4, -89)](images/opus/enceladus/output_v3_br_align_-4-89.jpg)
+
+The current alignment algorithm is pure brute force. However, there are likely some significant possible improvements:
+
+- Since the effectiveness of each alignment can be summarized in a single value, algorithms for efficiently finding minimum points in 2D matrix of values can be applied to this problem to reduce the number of alignments to consider.
+- It seems likely that for many images like the Enceladus image the "geometry" of the effectiveness matrix will be simple so greedy path finding algorithms could be used to quickly find the minimum location.
+- When combined with other OPUS metadata on space craft and target positions to estimate an alignment.
 
 ## OPUS API
 
