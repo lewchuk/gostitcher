@@ -61,6 +61,7 @@ The current alignment algorithm is pure brute force. However, there are likely s
 - Since the effectiveness of each alignment can be summarized in a single value, algorithms for efficiently finding minimum points in 2D matrix of values can be applied to this problem to reduce the number of alignments to consider.
 - It seems likely that for many images like the Enceladus image the "geometry" of the effectiveness matrix will be simple so greedy path finding algorithms could be used to quickly find the minimum location.
 - When combined with other OPUS metadata on space craft and target positions to estimate an alignment.
+- Properly crop to the overlap of the aligned images since currently edges of images with non zero intensities will produce colour borders.
 
 ## OPUS API
 
