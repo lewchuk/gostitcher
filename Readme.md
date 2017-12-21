@@ -50,15 +50,11 @@ However, after seeing a highly shifted set of images of Enceladus and applying t
 
 Original Blended Image|Aligned Blended Image
 ----|----
-![Original Blended Image](images/opus/enceladus/output_v2_alpha.jpg)|![Aligned Blended Image](images/opus/enceladus/output_v3.jpg)
-----|----
+![Original Blended Image](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v2_alpha.jpg)|![Aligned Blended Image](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v3.jpg)
 Original Blue Green Subtraction|Aligned Blue Green Subtraction (-1, -44)
-----|----
-![Original Blue Green Subtraction](images/opus/enceladus/output_v3_bg_align_00.jpg)|![Aligned Blue Green Subtraction (-1, -44)](images/opus/enceladus/output_v3_bg_align_-1-44.jpg)
-----|----
+![Original Blue Green Subtraction](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v3_bg_align_00.jpg)|![Aligned Blue Green Subtraction (-1, -44)](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v3_bg_align_-1-44.jpg)
 Original Blue Red Subtraction|Aligned Blue Red Subtraction (-1, -44)
-----|----
-![Original Blue Red Subtraction](images/opus/enceladus/output_v3_br_align_00.jpg)|![Aligned Blue Red Subtraction (-4, -89)](images/opus/enceladus/output_v3_br_align_-4-89.jpg)
+![Original Blue Red Subtraction](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v3_br_align_00.jpg)|![Aligned Blue Red Subtraction (-4, -89)](images/opus/enceladus/ISS_019EN_FP3HOTSPT020_CIRS/output_v3_br_align_-4-89.jpg)
 
 The current alignment algorithm is pure brute force. However, there are likely some significant possible improvements:
 
